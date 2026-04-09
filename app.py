@@ -345,17 +345,30 @@ section[data-testid="stSidebar"] { display: none !important; }
 """, unsafe_allow_html=True)
 
 
-# ── HELPERS ──────────────────────────────────
+# Adicionar antes da função (pode ser logo acima de extract_name_and_mes)
+MESES = {
+    "janeiro": "01", "fevereiro": "02", "março": "03", "abril": "04",
+    "maio": "05", "junho": "06", "julho": "07", "agosto": "08",
+    "setembro": "09", "outubro": "10", "novembro": "11", "dezembro": "12",
+}
+
 def extract_name_and_mes(text: str):
     lines = text.split('\n') if text else []
     nome, mes_ano = None, None
+
     for line in lines:
-        m = re.search(r'Ref\.\s*:\s*(\w+)\s+de\s+(\d{4})', line, re.IGNORECASE)
-        if m:
-            mes_ano = f"{m.group(1).upper()}-{m.group(2)}"
-        n = re.match(r'^\d{4}-(.+?)\s+C\.B\.O\.\s*:', line)
-        if n:
-            nome = n.group(1).strip().upper()
+        # Competência: "Março de 2026" → "03/2026"
+        if mes_ano is None:
+            m = re.search(r'(\w+)\s+de\s+(\d{4})', line, re.IGNORECASE)
+            if m and m.group(1).lower() in MESES:
+                mes_ano = f"{MESES[m.group(1).lower()]}-{m.group(2)}"
+
+        # Nome: "137 ABRAAO NUNES DE OLIVEIRA 992205 1 1"
+        if nome is None:
+            n = re.match(r'^\d+\s+([A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇ][A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇ\s]+?)\s+\d{6}\s', line)
+            if n:
+                nome = n.group(1).strip()
+
     return nome, mes_ano
 
 
